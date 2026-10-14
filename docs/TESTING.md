@@ -8,10 +8,10 @@
 |---|---|---|
 | PA9 tools | Synthetic regressions, public-data calculations, installed CLI/GUI | Not a complete legality checker or proof that generated Pokémon load in-game |
 | Packaging | Allowlisted source ZIP, wheel RECORD/data/licenses, normalized sdist, fresh installation | Python is required; GUI also needs Tk; not a standalone executable |
-| Linux GUI | Mapped X11/Tk, Japanese/English, small/high-DPI layouts, normal exit and same-process reopen | Local runtime: Linux x86-64 / Python 3.14.8; other platforms/runtimes remain unverified |
+| Linux GUI | Mapped X11/Tk, Japanese/English, small/high-DPI layouts, normal exit and same-process reopen | Local visual review: Linux x86-64 / Python 3.14.8; native CI coverage is listed separately below |
 | Optional BSS helper | Bundled C source, matching-kernel Kbuild, synthetic ownership/cleanup tests | Compilation does not prove module loading, RF behavior or a physical trade |
 | Current Direct/Relay/helper paths | Synthetic protocol, failure-path and packaging checks | No new physical exchange/save/recovery certification |
-| Windows / WSL and GitHub CI | Authored setup paths and CI targets | Check actual run logs separately; a workflow file is not a successful run |
+| Native Windows / Ubuntu CI | Python 3.10/3.12/3.14 regressions, artifact gates and exact installed CLI/GUI; [successful fix baseline](https://github.com/hrvtuirvw/za-ldn-trade/actions/runs/38583042096) | Hosted CI, not arbitrary desktops, WSL or physical radio/trade verification |
 
 **Tests passing does not prove that all bugs are absent.** Report skips and subtests separately. Normal/development runs of the same population are not independent cases. A synthetic adapter or peer is not hardware evidence.
 
@@ -59,8 +59,10 @@ Record app version, OS/kernel, Python, adapter/revision, driver/firmware, helper
 
 ## Continuous integration
 
-The authored Linux/Windows matrix targets Python 3.10/3.12/3.14. Linux includes Trio; supported Linux/Python 3.12+ jobs also import the pinned live dependencies. Device I/O is synthetic: CI must not load modules, connect to a console or reset USB controllers.
+The native Linux/Windows matrix targets Python 3.10/3.12/3.14. The [CI repair baseline](https://github.com/hrvtuirvw/za-ldn-trade/actions/runs/38583042096) passed all six jobs; version-tag release runs repeat these gates for their own exact source. Linux includes Trio; supported Linux/Python 3.12+ jobs also import the pinned live dependencies. Device I/O is synthetic: CI must not load modules, connect to a console or reset USB controllers.
 
 Jobs build from the public export, check archives and smoke-test installed CLI/GUI entrypoints outside source. Matching version tags repeat the gates before creating a draft prerelease. See [release procedure](RELEASING.md).
 
 `VERIFICATION.json` from `check_za_release.py` certifies **artifact integrity**, not arbitrary-platform or hardware execution. Inspect runtime/CI logs for those claims.
+
+`MANIFEST.json` is an export-time inventory. Its execution-verification flags are not updated by CI; use the commit/tag-bound CI run for native execution evidence. The exporter and artifact checker themselves do not perform hardware or arbitrary-platform validation.

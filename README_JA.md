@@ -1,6 +1,6 @@
 # za-ldn-trade
 
-[ダウンロード](https://github.com/hrvtuirvw/za-ldn-trade/releases/tag/v0.9.1) · [English](README.md#english) · [使い方](docs/USER_GUIDE.md) · [無線対応表](docs/WIRELESS_COMPATIBILITY.md) · [困ったとき](docs/TROUBLESHOOTING.md)
+[ダウンロード](https://github.com/hrvtuirvw/za-ldn-trade/releases/tag/v0.9.2) · [English](README.md#english) · [使い方](docs/USER_GUIDE.md) · [無線対応表](docs/WIRELESS_COMPATIBILITY.md) · [困ったとき](docs/TROUBLESHOOTING.md)
 
 『Pokémon LEGENDS Z-A』で、好きなポケモンを作って実機に送るためのツールです。PCで種族やフォルムなどを指定してPA9ファイルを作成し、そのポケモンをローカル交換で送れます。既存のPA9を編集したり、通信データを解析したりすることもできます。
 

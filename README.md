@@ -1,6 +1,6 @@
 # za-ldn-trade
 
-[日本語](#日本語) | [English](#english) · [Download / ダウンロード](https://github.com/hrvtuirvw/za-ldn-trade/releases/tag/v0.9.1)
+[日本語](#日本語) | [English](#english) · [Download / ダウンロード](https://github.com/hrvtuirvw/za-ldn-trade/releases/tag/v0.9.2)
 
 ## 日本語
 

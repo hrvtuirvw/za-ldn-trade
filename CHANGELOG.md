@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.2 — native Windows/Linux compatibility fixes
+
+- Correct Windows path/descriptor metadata admission without weakening same-API change detection, content identity, link/type/size checks or descriptor cleanup.
+- Refresh new-PA9 dialog scroll extents after disclosure and resizing; retain access to controls on small/high-DPI windows. Avoid expensive wrapped-index layout when following long GUI logs on Windows.
+- Preserve hash-checked catalog bytes across Git checkouts. Reject original unsafe ZIP member names before host-specific normalization.
+- Verify native Windows and Ubuntu on Python 3.10/3.12/3.14, finalized distribution formats and exact installed CLI/GUI. Make GUI fixtures, native menus and durability fault injection platform-correct without skipping failures or weakening assertions.
+- Preserve protocol identities, communication, durable-save/cancellation behavior, existing settings and upstream credits. No new radio/hardware validation or runtime dependency.
+
 ## 0.9.1 — za-ldn-trade
 
 - Rename the application, CLI display, distribution and installed commands to `za-ldn-trade`; use `za-ldn-trade-gui` for the installed GUI and `Start-za-ldn-trade.cmd` for the Windows source launcher. Source module names remain unchanged.
