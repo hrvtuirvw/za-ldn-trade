@@ -23,6 +23,27 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - name: Record native release-input metadata
+        run: |
+          python - <<'PY'
+          import json, os, platform, sys
+          from pathlib import Path
+          fields = ('st_dev', 'st_ino', 'st_size', 'st_mtime_ns', 'st_ctime_ns',
+                    'st_mode', 'st_birthtime_ns', 'st_file_attributes', 'st_reparse_tag')
+          print(sys.version, platform.platform())
+          if os.name == 'nt':
+              import ctypes
+              filesystem = ctypes.create_unicode_buffer(256)
+              if not ctypes.windll.kernel32.GetVolumeInformationW(
+                  str(Path.cwd().anchor), None, 0, None, None, None, filesystem, len(filesystem)):
+                  raise ctypes.WinError()
+              print('filesystem:', filesystem.value)
+          for name in ('.editorconfig', 'Start-za-ldn-trade.cmd'):
+              with open(name, 'rb') as stream:
+                  path_stat, fd_stat = Path(name).lstat(), os.fstat(stream.fileno())
+                  print(json.dumps({'path': name, 'lstat': {f: getattr(path_stat, f, None) for f in fields},
+                                    'fstat': {f: getattr(fd_stat, f, None) for f in fields}}))
+          PY
       - name: Export only reviewed public inputs
         run: python -B scripts/export_za_source.py --output "$RUNNER_TEMP/za-public"
       - name: Install product test dependencies
@@ -34,7 +55,8 @@ jobs:
           python -c 'import ldn, trio; print("Pinned live imports available; no radio operations")'
       - name: Linux Tk display and read-only kmod version checks
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y xvfb python3-tk kmod
+        # Japanese UI geometry must use actual CJK glyphs, not narrow tofu.
+        run: sudo apt-get update && sudo apt-get install -y xvfb python3-tk kmod fonts-noto-cjk
       - name: Verify release tag matches source
         if: startsWith(github.ref, 'refs/tags/')
         run: |

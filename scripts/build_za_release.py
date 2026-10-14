@@ -14,6 +14,7 @@ import zipfile
 
 MAX_RELEASE_BYTES = 64 * 1024 * 1024
 MAX_RELEASE_MEMBERS = 4096
+_WINDOWS = os.name == "nt"
 
 MODULES = {
     "zasim.ldn": "__init__ bss_seed ldn_name ldn_single pia_connect transport".split(),
@@ -70,6 +71,25 @@ def file_stamp(metadata):
                  ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns", "st_mode"))
 
 
+def _descriptor_matches(path, before, opened):
+    if not _WINDOWS:
+        return file_stamp(opened) == file_stamp(before)
+    # CPython's Windows path stat adds execute bits from the filename; fstat
+    # cannot. On 3.12+ path ctime is creation time, whereas fstat can expose
+    # change time. Compare creation time across APIs, then retain BOTH raw
+    # stamps below so descriptor change-time and path/preflight checks survive.
+    mode = opened.st_mode
+    if stat.S_ISREG(mode) and path.suffix.lower() in (".exe", ".com", ".bat", ".cmd"):
+        mode |= 0o111
+    def shared(metadata, mode):
+        return (metadata.st_dev, metadata.st_ino, metadata.st_size,
+                metadata.st_mtime_ns,
+                getattr(metadata, "st_birthtime_ns", metadata.st_ctime_ns), mode,
+                getattr(metadata, "st_file_attributes", 0),
+                getattr(metadata, "st_reparse_tag", 0))
+    return shared(opened, mode) == shared(before, before.st_mode)
+
+
 def read_regular_file(path, *, limit=MAX_RELEASE_BYTES, expected=None):
     """Read a bounded, unchanged regular entry, rejecting raced links/FIFOs.
 
@@ -89,13 +109,16 @@ def read_regular_file(path, *, limit=MAX_RELEASE_BYTES, expected=None):
              | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_CLOEXEC", 0))
     fd = os.open(path, flags)
     try:
-        if file_stamp(os.fstat(fd)) != identity:
+        opened = os.fstat(fd)
+        if not _descriptor_matches(path, before, opened):
             raise ValueError("release input changed before reading")
+        opened_identity = file_stamp(opened)
         with os.fdopen(fd, "rb", closefd=False) as stream:
             raw = stream.read(limit + 1)
         if len(raw) > limit:
             raise ValueError("release input exceeds size limit")
-        if file_stamp(os.fstat(fd)) != identity or file_stamp(path.lstat()) != identity:
+        if (file_stamp(os.fstat(fd)) != opened_identity
+                or file_stamp(no_links(path).lstat()) != identity):
             raise ValueError("release input changed while reading")
         return raw
     finally:

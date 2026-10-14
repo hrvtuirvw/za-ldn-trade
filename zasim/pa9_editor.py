@@ -20,7 +20,7 @@ from typing import Iterable, Mapping
 
 from .pa9 import PA9, PARTY_SIZE, STORED_SIZE, is_encrypted_pa9
 from .file_save import (
-    FileIdentity, _absolute_path, _metadata_identity, file_identity,
+    FileIdentity, _absolute_path, _opened_path_identity, file_identity,
     exclusive_save_lock, publish_approved, _sync_output_directory, _cleanup_owned_temporary,
     open_regular_binary,
 )
@@ -277,7 +277,7 @@ def _read_regular_pa9(path: str | Path) -> tuple[Path, bytes, FileIdentity]:
         raise FileNotFoundError(f"PA9 file does not exist: {target}")
     with open_regular_binary(target, max_size=PARTY_SIZE) as stream:
         opened = os.fstat(stream.fileno())
-        if _metadata_identity(opened) != (
+        if _opened_path_identity(target, opened) != (
             before.device,
             before.inode,
             before.size,

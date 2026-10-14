@@ -157,3 +157,137 @@ def test_public_reader_closes_fd_after_read_failure(tmp_path, monkeypatch):
 def test_public_reader_rejects_invalid_limit(tmp_path, limit):
     with pytest.raises(ValueError, match='size limit'):
         builder.read_regular_file(tmp_path / 'missing', limit=limit)
+
+
+@pytest.mark.parametrize('suffix', ['.txt', '.cmd', '.CMD', '.exe', '.bat', '.com'])
+def test_public_reader_accepts_unchanged_native_file_and_preflight(tmp_path, suffix):
+    target = tmp_path / ('source' + suffix)
+    raw = b'unchanged\r\n\x00binary\xff'
+    target.write_bytes(raw)
+    expected = builder.file_stamp(target.lstat())
+    assert builder.read_regular_file(target, expected=expected, limit=len(raw)) == raw
+    assert builder.file_stamp(target.lstat()) == expected
+
+
+def windows_metadata(*, descriptor=False, modern=True, **changes):
+    from types import SimpleNamespace
+    data = dict(st_dev=123, st_ino=456, st_size=8, st_mtime_ns=100,
+                st_ctime_ns=300 if descriptor and modern else 200,
+                st_mode=stat.S_IFREG | (0o666 if descriptor else 0o777),
+                st_file_attributes=32, st_reparse_tag=0)
+    if modern:
+        data['st_birthtime_ns'] = 200
+    data.update(changes)
+    return SimpleNamespace(**data)
+
+
+@pytest.mark.parametrize('modern', [False, True])
+@pytest.mark.parametrize('field', [None, 'st_dev', 'st_ino', 'st_size', 'st_mtime_ns',
+                                  'creation', 'st_mode', 'st_file_attributes', 'st_reparse_tag'])
+def test_windows_cross_api_stat_contract(monkeypatch, modern, field):
+    # CPython 3.10 uses creation-time ctime; 3.12+ also has birthtime and
+    # fstat may expose change-time ctime. Only known API representation differs.
+    monkeypatch.setattr(builder, '_WINDOWS', True)
+    before = windows_metadata(modern=modern)
+    opened = windows_metadata(descriptor=True, modern=modern)
+    if field:
+        key = ('st_birthtime_ns' if modern else 'st_ctime_ns') if field == 'creation' else field
+        setattr(opened, key, getattr(opened, key) ^ (0o200 if key == 'st_mode' else 1))
+    assert builder._descriptor_matches(Path('source.CmD'), before, opened) is (field is None)
+    if field is None:
+        assert not builder._descriptor_matches(Path('source.txt'), before, opened)
+
+
+@pytest.mark.parametrize('field', ['st_dev', 'st_ino', 'st_size', 'st_mtime_ns', 'st_ctime_ns', 'st_mode'])
+def test_public_reader_retains_full_descriptor_change_detection(tmp_path, monkeypatch, field):
+    from types import SimpleNamespace
+    target = tmp_path / 'source.cmd'; target.write_bytes(b'original')
+    actual = os.fstat
+    calls = []
+    def changed(fd):
+        original = actual(fd)
+        calls.append(fd)
+        if len(calls) == 1:
+            return original
+        values = {f: getattr(original, f) for f in
+                  ('st_dev', 'st_ino', 'st_size', 'st_mtime_ns', 'st_ctime_ns', 'st_mode')}
+        values[field] ^= 1
+        return SimpleNamespace(**values)
+    monkeypatch.setattr(os, 'fstat', changed)
+    with pytest.raises(ValueError, match='changed while'):
+        builder.read_regular_file(target)
+    assert len(calls) == 2
+    with pytest.raises(OSError):
+        actual(calls[0])
+
+
+@pytest.mark.parametrize('phase', ['open', 'read'])
+@pytest.mark.parametrize('mutation', ['replacement', 'same-size-write', 'growth'])
+def test_public_reader_rejects_actual_file_races(tmp_path, monkeypatch, phase, mutation):
+    target = tmp_path / 'source.cmd'; target.write_bytes(b'original')
+    reached = []
+    original_open, original_fdopen = os.open, os.fdopen
+    def mutate():
+        reached.append(True)
+        if mutation == 'replacement':
+            other = tmp_path / 'new'; other.write_bytes(b'replaced'); other.replace(target)
+        else:
+            target.write_bytes(b'modified' if mutation == 'same-size-write' else b'original grows')
+            # Deterministic on filesystems with coarser timestamps, no sleep.
+            st = target.stat(); os.utime(target, ns=(st.st_atime_ns, st.st_mtime_ns + 2_000_000_000))
+    def opening(path, flags, *args, **kw):
+        if Path(path) == target and phase == 'open': mutate()
+        return original_open(path, flags, *args, **kw)
+    def reading(fd, *args, **kw):
+        if phase == 'read': mutate()
+        return original_fdopen(fd, *args, **kw)
+    monkeypatch.setattr(os, 'open', opening)
+    monkeypatch.setattr(os, 'fdopen', reading)
+    with pytest.raises((ValueError, PermissionError)) as caught:
+        builder.read_regular_file(target)
+    assert reached == [True]
+    if isinstance(caught.value, PermissionError):
+        assert os.name == 'nt' and phase == 'read' and mutation == 'replacement'
+    else:
+        assert 'changed' in str(caught.value)
+
+
+@pytest.mark.skipif(os.name == 'nt', reason='POSIX symlink creation; reparse rejection modeled separately')
+def test_public_reader_rejects_symlink_at_actual_open(tmp_path, monkeypatch):
+    target = tmp_path / 'source.cmd'; target.write_bytes(b'original')
+    other = tmp_path / 'synthetic-private'; other.write_bytes(b'private')
+    original = os.open; reached = []
+    def opening(path, flags, *args, **kw):
+        if Path(path) == target:
+            reached.append(True); target.unlink(); target.symlink_to(other)
+        return original(path, flags, *args, **kw)
+    monkeypatch.setattr(os, 'open', opening)
+    with pytest.raises((OSError, ValueError)):
+        builder.read_regular_file(target)
+    assert reached == [True] and other.read_bytes() == b'private'
+
+
+@pytest.mark.parametrize('modern', [False, True])
+@pytest.mark.parametrize('change', [None, 'st_ctime_ns', 'st_mode'])
+def test_windows_reader_keeps_separate_raw_path_and_descriptor_stamps(tmp_path, monkeypatch, modern, change):
+    target = tmp_path / 'source.cmd'; target.write_bytes(b'original')
+    before = windows_metadata(modern=modern)
+    opened = windows_metadata(modern=modern, descriptor=True)
+    actual_lstat, actual_fstat = Path.lstat, os.fstat
+    monkeypatch.setattr(builder, '_WINDOWS', True)
+    monkeypatch.setattr(Path, 'lstat', lambda p, *a, **kw: before if p == target else actual_lstat(p, *a, **kw))
+    seen = []
+    def measured(fd):
+        seen.append(fd)
+        if len(seen) > 1 and change:
+            return windows_metadata(modern=modern, descriptor=True, **{change: getattr(opened, change) ^ 1})
+        return opened
+    monkeypatch.setattr(os, 'fstat', measured)
+    if change:
+        with pytest.raises(ValueError, match='changed while'):
+            builder.read_regular_file(target, expected=builder.file_stamp(before))
+    else:
+        assert builder.read_regular_file(target, expected=builder.file_stamp(before)) == b'original'
+    assert len(seen) == 2
+    with pytest.raises(OSError):
+        actual_fstat(seen[0])

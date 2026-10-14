@@ -563,3 +563,70 @@ def test_output_suffix_is_explicit() -> None:
     assert encrypted_for_path("x.ea9") is True
     with pytest.raises(ValueError, match="must use"):
         encrypted_for_path("x.bin")
+
+
+def _model_windows_metadata(metadata, *, descriptor, modern, mode=None):
+    from types import SimpleNamespace
+    values = {f: getattr(metadata, f) for f in dir(metadata) if f.startswith('st_')}
+    values['st_ctime_ns'] = 200 if descriptor and modern else 100
+    if modern:
+        values['st_birthtime_ns'] = 100
+    else:
+        values.pop('st_birthtime_ns', None)
+    if mode is not None:
+        values['st_mode'] = mode
+    return SimpleNamespace(**values)
+
+
+@pytest.mark.parametrize('modern', [False, True])
+def test_windows_metadata_load_save_as_edit_save_reload(tmp_path, monkeypatch, modern):
+    from zasim import file_save
+    source, output = tmp_path / 'input.pa9', tmp_path / 'output.pa9'
+    raw = _synthetic_record().to_bytes(); source.write_bytes(raw)
+    actual_lstat, actual_fstat = Path.lstat, os.fstat
+    def path_stat(path, *args, **kw):
+        metadata = actual_lstat(path, *args, **kw)
+        return (_model_windows_metadata(metadata, descriptor=False, modern=modern)
+                if path in (source, output) else metadata)
+    monkeypatch.setattr(file_save, '_WINDOWS', True)
+    monkeypatch.setattr(Path, 'lstat', path_stat)
+    monkeypatch.setattr(os, 'fstat', lambda fd: _model_windows_metadata(
+        actual_fstat(fd), descriptor=True, modern=modern))
+    document = PA9EditorDocument.load(source)
+    assert document.record.data == PA9(raw).data
+    document.save(output)
+    document.apply({'nickname': 'Windows'})
+    document.save()
+    assert PA9EditorDocument.load(output).record.nickname == 'Windows'
+    assert source.read_bytes() == raw
+    approved = file_save.file_identity(output)
+    assert approved.changed_ns == 100  # path identity contract is retained
+    output.write_bytes(output.read_bytes() + b'x')
+    with pytest.raises((ValueError, RuntimeError, FileExistsError)):
+        document.save()
+
+
+@pytest.mark.parametrize('phase', ['open', 'read'])
+@pytest.mark.parametrize('field', ['st_dev', 'st_ino', 'st_size', 'st_mtime_ns', 'time', 'st_mode'])
+def test_windows_reader_retains_identity_and_change_guards(tmp_path, monkeypatch, phase, field):
+    from zasim import file_save
+    path = tmp_path / 'synthetic.pa9'; path.write_bytes(b'original')
+    actual_lstat, actual_fstat = Path.lstat, os.fstat
+    monkeypatch.setattr(file_save, '_WINDOWS', True)
+    monkeypatch.setattr(Path, 'lstat', lambda p, *a, **kw:
+        _model_windows_metadata(actual_lstat(p, *a, **kw), descriptor=False, modern=True)
+        if p == path else actual_lstat(p, *a, **kw))
+    seen = []
+    def fd_stat(fd):
+        seen.append(fd)
+        metadata = _model_windows_metadata(actual_fstat(fd), descriptor=True, modern=True)
+        if phase == 'open' or len(seen) == 3:
+            key = ('st_birthtime_ns' if phase == 'open' else 'st_ctime_ns') if field == 'time' else field
+            setattr(metadata, key, getattr(metadata, key) ^ (0o200 if key == 'st_mode' else 1))
+        return metadata
+    monkeypatch.setattr(os, 'fstat', fd_stat)
+    with pytest.raises(RuntimeError, match='changed'):
+        file_save.file_identity(path)
+    assert len(seen) == (1 if phase == 'open' else 3)
+    with pytest.raises(OSError):
+        actual_fstat(seen[0])

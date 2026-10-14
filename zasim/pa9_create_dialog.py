@@ -13,6 +13,7 @@ class NewPA9Dialog:
     def __init__(self, parent, *, tk, ttk, messagebox, scroll_class, accept):
         self.tk, self.ttk, self.messagebox, self.accept = tk, ttk, messagebox, accept
         self.window = w = tk.Toplevel(parent)
+        self._resize_job = None
         w.title(tr('新規PA9 — 元セーブ不要'))
         w.transient(parent)
         w.geometry(f"{min(720, max(320, parent.winfo_width()))}x{min(760, max(300, parent.winfo_height()))}")
@@ -90,7 +91,6 @@ class NewPA9Dialog:
             lab.grid(row=0, column=0, sticky="ew", pady=(0, 3))
             self.labels.append(lab)
             self.field_labels[name] = lab
-            group.bind("<Configure>", lambda e, label=lab: label.configure(wraplength=max(100, e.width - 4)), add="+")
             widget = (ttk.Entry(group, textvariable=var, width=18) if choices is None
                       else ttk.Combobox(group, textvariable=var, values=choices, state="readonly", width=18))
             widget.grid(row=1, column=0, sticky="ew")
@@ -130,6 +130,9 @@ class NewPA9Dialog:
     def _destroyed(self, event):
         if event.widget is not self.window:
             return
+        if self._resize_job is not None:
+            self.window.after_cancel(self._resize_job)
+            self._resize_job = None
         for variable, callback in self._input_traces:
             try:
                 variable.trace_remove("write", callback)
@@ -162,10 +165,28 @@ class NewPA9Dialog:
                                         uniform="fields" if column < columns else "")
             for index, group in enumerate(groups):
                 group.grid(row=index // columns, column=index % columns, sticky="nsew", padx=4, pady=5)
+            # Derive wrapping from the viewport, not the previous allocation:
+            # requested-width -> Canvas-width -> label-wrap feedback can oscillate.
+            for name, group in self.field_groups.items():
+                if group in groups:
+                    self.field_labels[name].configure(wraplength=max(100, width // columns - 12))
         self.notice.configure(wraplength=width)
+        self._schedule_resize()
+
+    def _schedule_resize(self):
+        # An explicit Canvas window height suppresses Configure when grid's
+        # requested size changes. Refresh after disclosure/reflow has settled.
+        if self._resize_job is None:
+            self._resize_job = self.window.after_idle(self._sync_scroll_extent)
+
+    def _sync_scroll_extent(self):
+        self.window.update_idletasks()
+        self._resize_job = None
+        self.area._resize()
 
     def _toggle_optional(self):
         self.optional_fields.grid() if self.optional_var.get() else self.optional_fields.grid_remove()
+        self._schedule_resize()
 
     def _wheel(self, event):
         if event.widget.winfo_class() in ("TCombobox", "Listbox"):
@@ -207,6 +228,7 @@ class NewPA9Dialog:
             tr('starter: 御三家6種のギフト。出会いLv5・場所・ボールを固定。能力値と技を計算します。')
             if starter else tr('custom: 出会い条件は利用者が指定する下書きです。正規入手可能性は検証しません。')
         ) + tr(' 合法性の完全判定・ゲーム読込・実機交換を保証しません。'))
+        self._schedule_resize()
 
     def _generate_ids(self):
         self.vars["tid"].set(str(secrets.randbelow(65536)))

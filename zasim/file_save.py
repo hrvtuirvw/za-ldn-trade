@@ -22,6 +22,7 @@ from typing import BinaryIO, Callable, Iterator
 _PROCESS_SAVE_LOCKS_GUARD = threading.Lock()
 _PROCESS_SAVE_LOCKS: dict[str, threading.Lock] = {}
 MAX_IDENTITY_BYTES = 1024 * 1024
+_WINDOWS = os.name == "nt"
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,6 +146,22 @@ def _metadata_identity(metadata: os.stat_result) -> tuple[int, int, int, int, in
     )
 
 
+def _opened_path_identity(path: Path, metadata: os.stat_result) -> tuple[int, int, int, int, int, int]:
+    """Represent an opened descriptor like CPython's Windows path stat.
+
+    Path stat infers executable bits from the suffix and reports creation-time
+    ctime. Modern fstat can report change-time ctime instead. This conversion
+    is ONLY for cross-API comparisons; descriptor-to-descriptor checks retain
+    the unmodified change time and mode via _metadata_identity.
+    """
+    values = list(_metadata_identity(metadata))
+    if _WINDOWS:
+        values[4] = int(getattr(metadata, "st_birthtime_ns", metadata.st_ctime_ns))
+        if stat.S_ISREG(metadata.st_mode) and path.suffix.lower() in (".exe", ".com", ".bat", ".cmd"):
+            values[5] |= 0o111
+    return tuple(values)
+
+
 @contextmanager
 def open_regular_binary(
     path: str | Path, *, max_size: int | None = None, allow_symlink: bool = False,
@@ -172,7 +189,7 @@ def open_regular_binary(
         opened = os.fstat(descriptor)
         if not stat.S_ISREG(opened.st_mode):
             raise ValueError(f"input is not a regular file: {target}")
-        if _metadata_identity(opened) != _metadata_identity(before):
+        if _opened_path_identity(target, opened) != _metadata_identity(before):
             raise RuntimeError(f"input changed while opening: {target}")
         with os.fdopen(descriptor, "rb") as stream:
             descriptor = None
@@ -208,12 +225,13 @@ def file_identity(path: str | Path) -> FileIdentity | None:
     expected = _metadata_identity(metadata)
     with open_regular_binary(target, max_size=MAX_IDENTITY_BYTES) as stream:
         opened = os.fstat(stream.fileno())
-        if not stat.S_ISREG(opened.st_mode) or _metadata_identity(opened) != expected:
+        if not stat.S_ISREG(opened.st_mode) or _opened_path_identity(target, opened) != expected:
             raise RuntimeError(f"file changed while checking identity: {target}")
+        opened_identity = _metadata_identity(opened)
         raw = stream.read(MAX_IDENTITY_BYTES + 1)
         if len(raw) > MAX_IDENTITY_BYTES:
             raise ValueError(f"PA9 identity input exceeds {MAX_IDENTITY_BYTES} bytes: {target}")
-        if _metadata_identity(os.fstat(stream.fileno())) != expected:
+        if _metadata_identity(os.fstat(stream.fileno())) != opened_identity:
             raise RuntimeError(f"file changed while checking identity: {target}")
     try:
         after = target.lstat()

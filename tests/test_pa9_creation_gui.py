@@ -180,3 +180,65 @@ def test_new_dialog_optional_disclosure_preserves_request_and_foreign_search_tra
         d.search_var.trace_remove('write',foreign)
         assert not callbacks and not errors
     finally:cleanup(root)
+
+
+@pytest.mark.parametrize('language', ['ja', 'en'])
+@pytest.mark.parametrize('scale,size', [(1.3333, '800x600'), (2.0, '640x480'), (2.6667, '1080x820')])
+def test_new_dialog_extent_tracks_disclosure_mode_and_resize(monkeypatch, language, scale, size):
+    root, app, errors, _, callbacks = make_app(monkeypatch, scale, language)
+    try:
+        root.geometry(size); settle(root)
+        app._editor_new(); settle(root)
+        d = app.editor_new_dialog
+        resize_calls = []
+        dialog_type = type(d)
+        original_resize = dialog_type._sync_scroll_extent
+        def bounded_resize(dialog):
+            resize_calls.append(True)
+            if len(resize_calls) > 60:
+                dialog._resize_job = None
+                monkeypatch.setattr(dialog_type, '_schedule_resize', lambda self: None)
+                return  # fail below instead of hanging in Tk's idle queue
+            original_resize(dialog)
+        monkeypatch.setattr(dialog_type, '_sync_scroll_extent', bounded_resize)
+        for geometry, optional, mode in ((size, True, 'starter'), ('640x480', True, 'custom'),
+                                         ('800x600', False, 'starter'), (size, True, 'starter')):
+            resize_calls.clear()
+            d.window.geometry(geometry)
+            d.optional_var.set(optional); d._toggle_optional()
+            d.vars['encounter'].set(mode)
+            settle(root)
+            assert len(resize_calls) <= 60
+            assert d._resize_job is None
+            assert d.area.canvas.bbox(d.area.window)[3] == max(
+                d.area.content.winfo_reqheight(), d.area.canvas.winfo_height())
+            for widget in d.widgets.values():
+                if widget.winfo_viewable():
+                    # Real FocusIn route, not just direct scrolling helper.
+                    widget.event_generate('<FocusIn>'); settle(root)
+                    from test_gui_layout import bounds
+                    if widget.winfo_width() <= d.area.canvas.winfo_width():
+                        visible(widget, d.area.canvas)
+                    else:
+                        # Oversize native controls retain the existing horizontal
+                        # fallback; this regression requires full vertical reach.
+                        assert bounds(d.area.canvas)[1] <= bounds(widget)[1] < bounds(widget)[3] <= bounds(d.area.canvas)[3]
+                        assert d.area.canvas.xview()[1] - d.area.canvas.xview()[0] < 1
+                        assert d.area.horizontal.winfo_viewable()
+            assert len(resize_calls) <= 60
+            visible(d.create_button, d.window); visible(d.cancel_button, d.window)
+        # A scheduled refresh is owned by this dialog, including immediate close.
+        d._toggle_optional(); assert d._resize_job is not None
+        job = d._resize_job
+        d.cancel_button.invoke(); settle(root)
+        assert d._resize_job is None and job not in root.tk.call('after', 'info')
+        assert not callbacks and app.editor_document is None
+    finally:
+        cleanup(root)
+    # Dispose on Tk's owner thread before subsequent tests start workers. Do
+    # not pre-clear product traces/callbacks to manufacture lifetime success.
+    import gc, weakref
+    references = (weakref.ref(d), weakref.ref(app), weakref.ref(root))
+    del d, app, root, widget
+    gc.collect()
+    assert all(ref() is None for ref in references)
