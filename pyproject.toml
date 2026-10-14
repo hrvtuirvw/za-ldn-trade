@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "za-ldn-trade"
+dynamic = ["version"]
+description = "Pokémon LEGENDS Z-A local-trade interoperability client and PA9 editor"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "AGPL-3.0-only AND GPL-2.0-only"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md", "licenses/*.txt"]
+dependencies = ["pycryptodome==3.23.0", "zstandard==0.25.0"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Natural Language :: English",
+    "Natural Language :: Japanese",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+]
+
+[project.urls]
+Homepage = "https://github.com/hrvtuirvw/za-ldn-trade"
+Repository = "https://github.com/hrvtuirvw/za-ldn-trade"
+Issues = "https://github.com/hrvtuirvw/za-ldn-trade/issues"
+
+[project.optional-dependencies]
+live = ["ldn==0.0.17; platform_system == 'Linux' and python_version >= '3.12'", "python-netlink==0.0.15; platform_system == 'Linux' and python_version >= '3.12'", "trio==0.33.0; platform_system == 'Linux' and python_version >= '3.12'"]
+test = ["pytest>=8,<10", "trio==0.33.0; platform_system == 'Linux'", "ldn==0.0.17; platform_system == 'Linux' and python_version >= '3.12'", "python-netlink==0.0.15; platform_system == 'Linux' and python_version >= '3.12'"]
+
+[project.scripts]
+za-ldn-trade = "zatrade:main"
+
+[project.gui-scripts]
+za-ldn-trade-gui = "zasim.gui:launch_gui"
+
+[tool.setuptools]
+py-modules = ["zatrade", "zatrade_gui"]
+packages = ["zasim", "zasim.ldn"]
+include-package-data = false
+
+[tool.setuptools.cmdclass]
+# Share the reviewed module allowlist with the source exporter. Package
+# discovery/exclude-package-data alone cannot exclude individual .py modules.
+build_py = "scripts.za_build.PublicBuildPy"
+
+[tool.setuptools.dynamic]
+version = {attr = "zasim.__version__"}
+
+[tool.setuptools.package-data]
+zasim = ["data/bss_seed/*.c", "data/bss_seed/Kbuild", "data/za_creation.json", "data/za_creation_provenance.json", "locales/*.json", "data/ui_names.json", "data/ui_names_provenance.json"]

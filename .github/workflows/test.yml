@@ -1,0 +1,77 @@
+name: Portable tests
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ['3.10', '3.12', '3.14']
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Export only reviewed public inputs
+        run: python -B scripts/export_za_source.py --output "$RUNNER_TEMP/za-public"
+      - name: Install product test dependencies
+        run: python -m pip install "$RUNNER_TEMP/za-public[test]" build
+      - name: Exercise the optional Linux dependency path
+        if: runner.os == 'Linux' && matrix.python != '3.10'
+        run: |
+          python -m pip install "$RUNNER_TEMP/za-public[live]"
+          python -c 'import ldn, trio; print("Pinned live imports available; no radio operations")'
+      - name: Linux Tk display and read-only kmod version checks
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y xvfb python3-tk kmod
+      - name: Verify release tag matches source
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          cd "$RUNNER_TEMP/za-public"
+          python -c 'import os, zasim; assert os.environ["GITHUB_REF_NAME"] == "v" + zasim.__version__'
+      - name: Linux product tests
+        if: runner.os == 'Linux'
+        run: |
+          cd "$RUNNER_TEMP/za-public"
+          xvfb-run -a python -m pytest -q -rs -W error::ResourceWarning
+      - name: Windows product tests
+        if: runner.os == 'Windows'
+        run: |
+          cd "$RUNNER_TEMP/za-public"
+          python -m pytest -q -rs -W error::ResourceWarning
+      - name: Build and verify finalized artifacts
+        run: |
+          cd "$RUNNER_TEMP/za-public"
+          python -m build --outdir "$RUNNER_TEMP/za-dist"
+          python -B scripts/normalize_za_artifacts.py --directory "$RUNNER_TEMP/za-dist"
+          python -B scripts/build_za_release.py --output "$RUNNER_TEMP/za-dist"
+          python -B scripts/check_za_release.py --directory "$RUNNER_TEMP/za-dist" --write-checksums
+      - name: Exact wheel CLI and GUI outside source
+        run: |
+          python -m venv "$RUNNER_TEMP/za-install"
+          if [ "$RUNNER_OS" = Windows ]; then
+            PY="$RUNNER_TEMP/za-install/Scripts/python.exe"
+          else
+            PY="$RUNNER_TEMP/za-install/bin/python"
+          fi
+          "$PY" -m pip install "$RUNNER_TEMP"/za-dist/*.whl
+          "$PY" -m pip check
+          VERSION=$(python -c 'import zasim; print(zasim.__version__)')
+          cp "$RUNNER_TEMP/za-public/scripts/smoke_installed.py" "$RUNNER_TEMP/smoke_installed.py"
+          cd "$RUNNER_TEMP"
+          if [ "$RUNNER_OS" = Linux ]; then
+            xvfb-run -a "$PY" -I -B smoke_installed.py --expected-version "$VERSION" --gui
+          else
+            "$PY" -I -B smoke_installed.py --expected-version "$VERSION" --gui
+          fi

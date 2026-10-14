@@ -1,0 +1,5 @@
+{
+  "False": "a16137dc8722b1c32bd08603ace99e7d7a1c8d4aa7b82ec86f6db5e8d2004675",
+  "True": "a16137dc8722b1c32bd08603ace99e7d7a1c8d4aa7b82ec86f6db5e8d2004675",
+  "provenance": "Synthetic real-crypto default handshake, frozen 0.8.8; fixed PC/peer identities, clocks and nonces. No physical traffic or keys."
+}

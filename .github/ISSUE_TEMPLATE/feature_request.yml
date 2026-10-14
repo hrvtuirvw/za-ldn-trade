@@ -1,0 +1,13 @@
+name: Feature request / 機能提案
+description: Suggest an improvement / 改善案
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Problem and proposed improvement / 困っていること・改善案
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and affected workflow / 代替案・対象の操作

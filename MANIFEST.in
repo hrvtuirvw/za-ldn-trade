@@ -1,0 +1,16 @@
+include LICENSE THIRD_PARTY_NOTICES.md README.md README_JA.md README_ZA.md RELEASE_NOTES.md CHANGELOG.md CONTRIBUTING.md SECURITY.md
+include requirements.txt requirements-za.txt pytest.ini Start-za-ldn-trade.cmd
+include pyproject.toml MANIFEST.in .editorconfig
+graft licenses
+graft zasim
+exclude zasim/rejection_probe.py
+graft tests
+graft scripts
+graft docs
+graft .github
+global-exclude __pycache__ *.py[cod] *.keys *.pa9 *.epa9 *.ea9 *.jsonl *.pcap *.pcapng *.core *.ko *.nca *.nsp *.xci *.nso *.nro
+prune work
+prune local
+prune frlgsim
+prune development
+exclude frlgtrade.py

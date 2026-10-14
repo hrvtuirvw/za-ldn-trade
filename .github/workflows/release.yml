@@ -1,0 +1,66 @@
+name: Draft prerelease
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  verify:
+    uses: ./.github/workflows/test.yml
+  package:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Export public source and verify tag
+        run: |
+          python -B scripts/export_za_source.py --output "$RUNNER_TEMP/za-public"
+          cd "$RUNNER_TEMP/za-public"
+          python -c 'import os, zasim; assert os.environ["GITHUB_REF_NAME"] == "v" + zasim.__version__'
+      - name: Build and verify finalized release bytes
+        run: |
+          python -m pip install build
+          cd "$RUNNER_TEMP/za-public"
+          python -m build --outdir "$RUNNER_TEMP/za-dist"
+          python -B scripts/normalize_za_artifacts.py --directory "$RUNNER_TEMP/za-dist"
+          python -B scripts/build_za_release.py --output "$RUNNER_TEMP/za-dist"
+          python -B scripts/check_za_release.py --directory "$RUNNER_TEMP/za-dist" --write-checksums --report "$RUNNER_TEMP/za-dist/VERIFICATION.json"
+      - name: Smoke-test the exact assets to be attached
+        run: |
+          sudo apt-get update && sudo apt-get install -y xvfb python3-tk
+          python -m venv "$RUNNER_TEMP/za-install"
+          "$RUNNER_TEMP/za-install/bin/python" -m pip install "$RUNNER_TEMP"/za-dist/*.whl
+          "$RUNNER_TEMP/za-install/bin/python" -m pip check
+          cp "$RUNNER_TEMP/za-public/scripts/smoke_installed.py" "$RUNNER_TEMP/smoke_installed.py"
+          cd "$RUNNER_TEMP"
+          xvfb-run -a za-install/bin/python -I -B smoke_installed.py --expected-version "${GITHUB_REF_NAME#v}" --gui
+      - name: Render documentation links for this exact tag
+        run: |
+          python - <<'PYNOTES'
+          import os
+          from pathlib import Path
+          from urllib.parse import quote
+          temp = Path(os.environ["RUNNER_TEMP"])
+          base = os.environ["GITHUB_SERVER_URL"] + "/" + os.environ["GITHUB_REPOSITORY"] + "/blob/" + quote(os.environ["GITHUB_REF_NAME"], safe="")
+          text = (temp / "za-public/RELEASE_NOTES.md").read_text(encoding="utf-8")
+          (temp / "za-release-notes.md").write_text(text.replace("](docs/", "](" + base + "/docs/"), encoding="utf-8")
+          PYNOTES
+      - name: Create a draft, not a public stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "A release already exists; CI will not replace its verified assets."
+            exit 0
+          fi
+          gh release create "$GITHUB_REF_NAME" \
+            "$RUNNER_TEMP"/za-dist/*.whl "$RUNNER_TEMP"/za-dist/*.tar.gz \
+            "$RUNNER_TEMP"/za-dist/*.zip "$RUNNER_TEMP/za-dist/SHA256SUMS" \
+            "$RUNNER_TEMP/za-dist/VERIFICATION.json" \
+            --verify-tag --draft --prerelease --title "za-ldn-trade $GITHUB_REF_NAME" \
+            --notes-file "$RUNNER_TEMP/za-release-notes.md"

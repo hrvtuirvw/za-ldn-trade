@@ -1,0 +1,57 @@
+name: Bug report / 不具合報告
+description: Report a reproducible application problem / 再現できる不具合
+body:
+  - type: markdown
+    attributes:
+      value: "Do not upload keys, ROMs, saves, real PA9 files, raw captures, codes, addresses or private paths. 鍵・セーブ・実個体・生の通信ログ・個人情報を添付しないでください。"
+  - type: input
+    id: version
+    attributes:
+      label: Application version / アプリ版
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: OS, Python and UI language / OS・Python・表示言語
+      placeholder: "Windows 11, Python 3.12, English"
+    validations:
+      required: true
+  - type: dropdown
+    id: workflow
+    attributes:
+      label: Workflow / 操作
+      options:
+        - PA9 editor (offline)
+        - Inspect / analysis (offline)
+        - GUI / setup / language
+        - Direct Linux (experimental)
+        - Relay / WSL (experimental)
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps, expected result and actual result / 手順・期待・実際
+      description: Prefer a minimal synthetic example; redact screenshots. 架空データでの再現手順を優先。
+    validations:
+      required: true
+  - type: textarea
+    id: hardware
+    attributes:
+      label: Optional wireless details / 無線の場合のみ
+      description: Adapter model, driver, kernel and read-only prerequisite result. No serial/MAC/IP/key values. No need to repeat a trade with an uncertain outcome.
+  - type: dropdown
+    id: helper
+    attributes:
+      label: Optional BSS helper / 任意補助の状態
+      options:
+        - Not used / 使用していない
+        - Built and selected / ビルド・選択済み
+        - Build or bundle check failed / ビルド・検証で失敗
+        - Load or cleanup failed / 読込み・後片付けで失敗
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before submitting / 送信前
+      options:
+        - label: I removed secrets and personal data / 秘密・個人情報を削除しました
+          required: true

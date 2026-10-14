@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "project": "https://github.com/kwsch/PKHeX",
+  "commit": "e15d2467b32da7bc26ce7cc8e5c4ede32740e20a",
+  "license": "GPL-3.0-or-later",
+  "data_sha256": "caedd697746de6f9a7ee2dc3993c75ebca4562b1e86786dfe0a6959610814d0f",
+  "public_source_archive_sha256": "fa8feaa082d799d4137457005a1442c084b383931e13437ad9069f4860d87e1d",
+  "exporter": "scripts/pa9_reference/Program.cs",
+  "inputs": {
+    "LICENSE": "ccb349b4132ed7737f25e5adebfe61f3d52dca33708df1e50352320438d1d4c2",
+    "PKHeX.Core/PKHeX.Core.csproj": "d4c30cea1e4c24115798b1b11b1ad126123f286af1d8ade6c4e68920f2e6f17a",
+    "PKHeX.Core/Resources/byte/personal/personal_za": "a76968217e23c8bfcb97e8c817568d537904d4c32561f47db52b50b4f4bf5bff",
+    "PKHeX.Core/Resources/byte/levelup/lvlmove_za.pkl": "671b61fd5f2c7316f3e64657b3004f094477a27aec095e9673414b752555634c",
+    "PKHeX.Core/Resources/legality/misc/plus_za.pkl": "75cb3c8d3e6594bfa7bea658633889d663c8fca9da413c2db59402b44e90a255",
+    "PKHeX.Core/PKM/Util/Experience.cs": "3e0be51db2f2623a083f647bce4b25189166806012107040ec62ed62f3e34b0d",
+    "PKHeX.Core/PKM/Util/Conversion/SpeciesConverter.cs": "906fd0fec0cb54333b5d9df5d9a6c8c265308d1a25f402cfd3126715892593bf",
+    "PKHeX.Core/PKM/PKM.cs": "38479e76dd598a1beafd3a0b6932d65d619d7cb4a5e23a5a80c549fa6426e413",
+    "PKHeX.Core/PKM/PA9.cs": "2cf275a602484efa79eb26676e24c60dd2de2ccbca3cfc338aae68d69184d593",
+    "PKHeX.Core/Moves/MoveInfo9a.cs": "db0aed9f5d72530ed0141a21dc35ddafb9539ba899e3436bc3850065b3d04c5a",
+    "PKHeX.Core/PersonalInfo/Info/PersonalInfo9ZA.cs": "97ec0acc88e6aef59d4c72a6b3001b428fe2f94fba5b8e6f7daaeba680636463",
+    "PKHeX.Core/Legality/Encounters/Data/Gen9/Encounters9a.cs": "f7d19912dce009b44aea2d3c7c4566f5ed379e896cf302749f8db32829cbde23",
+    "PKHeX.Core/Legality/Encounters/Templates/Gen9a/LumioseRNG.cs": "5e24d3e78ea63856f2c7b55420301780a9676498c83c8f4a973042b4e83c1533",
+    "PKHeX.Core/Legality/RNG/Algorithms/Xoroshiro128Plus.cs": "4cd34220fe7f547cde815f36191522479275d4e345e8b46b0a31a3878b4104e1"
+  }
+}

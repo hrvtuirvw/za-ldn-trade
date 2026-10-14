@@ -1,0 +1,633 @@
+{
+  "source_commit": "e15d2467b32da7bc26ce7cc8e5c4ede32740e20a",
+  "ot_name": "\u30c6\u30b9\u30c8",
+  "tid": 12345,
+  "sid": 54321,
+  "met_date": "2026-10-05",
+  "cases": [
+    {
+      "file": "starter-1-0.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        19,
+        11,
+        12,
+        13,
+        11,
+        10
+      ],
+      "expected_stats": [
+        19,
+        11,
+        12,
+        13,
+        11,
+        10
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-1-1.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        20,
+        12,
+        9,
+        10,
+        13,
+        11
+      ],
+      "expected_stats": [
+        20,
+        12,
+        9,
+        10,
+        13,
+        11
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-1-123456.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        20,
+        10,
+        9,
+        13,
+        14,
+        11
+      ],
+      "expected_stats": [
+        20,
+        10,
+        9,
+        13,
+        14,
+        11
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-1-18446744073709551615.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        21,
+        10,
+        11,
+        12,
+        13,
+        10
+      ],
+      "expected_stats": [
+        21,
+        10,
+        11,
+        12,
+        13,
+        10
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-152-0.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        19,
+        11,
+        14,
+        11,
+        11,
+        10
+      ],
+      "expected_stats": [
+        19,
+        11,
+        14,
+        11,
+        11,
+        10
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-152-1.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        20,
+        12,
+        11,
+        9,
+        13,
+        11
+      ],
+      "expected_stats": [
+        20,
+        12,
+        11,
+        9,
+        13,
+        11
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-152-123456.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        20,
+        10,
+        9,
+        11,
+        14,
+        11
+      ],
+      "expected_stats": [
+        20,
+        10,
+        9,
+        11,
+        14,
+        11
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-152-18446744073709551615.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        21,
+        10,
+        13,
+        10,
+        13,
+        10
+      ],
+      "expected_stats": [
+        21,
+        10,
+        13,
+        10,
+        13,
+        10
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-158-0.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        20,
+        13,
+        13,
+        10,
+        9,
+        10
+      ],
+      "expected_stats": [
+        20,
+        13,
+        13,
+        10,
+        9,
+        10
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-158-1.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        21,
+        14,
+        11,
+        9,
+        11,
+        10
+      ],
+      "expected_stats": [
+        21,
+        14,
+        11,
+        9,
+        11,
+        10
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-158-123456.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        20,
+        11,
+        9,
+        10,
+        12,
+        10
+      ],
+      "expected_stats": [
+        20,
+        11,
+        9,
+        10,
+        12,
+        10
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-158-18446744073709551615.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        21,
+        12,
+        12,
+        10,
+        11,
+        9
+      ],
+      "expected_stats": [
+        21,
+        12,
+        12,
+        10,
+        11,
+        9
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-4-0.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        19,
+        11,
+        11,
+        12,
+        9,
+        12
+      ],
+      "expected_stats": [
+        19,
+        11,
+        11,
+        12,
+        9,
+        12
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-4-1.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        19,
+        12,
+        9,
+        10,
+        11,
+        13
+      ],
+      "expected_stats": [
+        19,
+        12,
+        9,
+        10,
+        11,
+        13
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-4-123456.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        19,
+        10,
+        8,
+        12,
+        12,
+        13
+      ],
+      "expected_stats": [
+        19,
+        10,
+        8,
+        12,
+        12,
+        13
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-4-18446744073709551615.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        20,
+        11,
+        10,
+        11,
+        11,
+        12
+      ],
+      "expected_stats": [
+        20,
+        11,
+        10,
+        11,
+        11,
+        12
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-498-0.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        21,
+        12,
+        12,
+        11,
+        9,
+        10
+      ],
+      "expected_stats": [
+        21,
+        12,
+        12,
+        11,
+        9,
+        10
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-498-1.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        22,
+        13,
+        9,
+        9,
+        11,
+        11
+      ],
+      "expected_stats": [
+        22,
+        13,
+        9,
+        9,
+        11,
+        11
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-498-123456.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        22,
+        11,
+        8,
+        11,
+        12,
+        11
+      ],
+      "expected_stats": [
+        22,
+        11,
+        8,
+        11,
+        12,
+        11
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-498-18446744073709551615.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        23,
+        12,
+        11,
+        10,
+        11,
+        10
+      ],
+      "expected_stats": [
+        23,
+        12,
+        11,
+        10,
+        11,
+        10
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-7-0.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        19,
+        11,
+        14,
+        11,
+        10,
+        10
+      ],
+      "expected_stats": [
+        19,
+        11,
+        14,
+        11,
+        10,
+        10
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-7-1.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        20,
+        12,
+        11,
+        9,
+        12,
+        10
+      ],
+      "expected_stats": [
+        20,
+        12,
+        11,
+        9,
+        12,
+        10
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-7-123456.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        20,
+        10,
+        9,
+        11,
+        13,
+        10
+      ],
+      "expected_stats": [
+        20,
+        10,
+        9,
+        11,
+        13,
+        10
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    },
+    {
+      "file": "starter-7-18446744073709551615.pa9",
+      "size": 344,
+      "structural": true,
+      "level": 5,
+      "cached_level": 5,
+      "stats": [
+        20,
+        10,
+        13,
+        10,
+        12,
+        9
+      ],
+      "expected_stats": [
+        20,
+        10,
+        13,
+        10,
+        12,
+        9
+      ],
+      "stats_match": true,
+      "legality": true,
+      "report": "Legal!"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+# Optional Linux Z-A wireless backend (Python 3.12+; use a venv; offline GUI uses requirements-za.txt)
+ldn==0.0.17
+python-netlink==0.0.15
+pycryptodome==3.23.0
+trio==0.33.0
+zstandard==0.25.0

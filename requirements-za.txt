@@ -1,0 +1,3 @@
+# Windows/Linux GUI + offline/relay client (Tkinter is supplied by Python/OS)
+pycryptodome==3.23.0
+zstandard==0.25.0

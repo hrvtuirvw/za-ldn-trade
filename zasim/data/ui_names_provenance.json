@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "project": "https://github.com/kwsch/PKHeX",
+  "commit": "e15d2467b32da7bc26ce7cc8e5c4ede32740e20a",
+  "license": "GPL-3.0-or-later",
+  "inputs": {
+    "PKHeX.Core/Resources/text/other/ja/text_Moves_ja.txt": "eb9f4cec160f21bf0dee5029f1cf03c7606ef0e773349b9747ade0c121f6a296",
+    "PKHeX.Core/Resources/text/other/en/text_Moves_en.txt": "0530e3b28b58bd674769375bb25fb2afd35ef49a522283e33ece6d1f2bcdb719",
+    "PKHeX.Core/Resources/text/other/ja/text_Abilities_ja.txt": "14be9433da8d5849542711cf43893c00217a9df620d24471ca637b4d6d207e4b",
+    "PKHeX.Core/Resources/text/other/en/text_Abilities_en.txt": "84a3caeaa9f238545225e8d9987e8fbefde4f074f7d5289cd575f8db8961b4e5",
+    "PKHeX.Core/Resources/text/items/text_Items_ja.txt": "a22f6b5be3e4e5119cd340380e1041ffa29039aa693b8baf33c1ea47d01c3ac1",
+    "PKHeX.Core/Resources/text/items/text_Items_en.txt": "ced422707941cb377098c7b82fa6e0a1cc1d93fe27e8f43915952dd1b3313831"
+  },
+  "data_sha256": "0ec2ebfeff0bcb3963c97cc41046d3c90be62fe6ab35f3234c13caacbf235e29",
+  "purpose": "Display/search names only, not an encounter legality database",
+  "input_normalization": "CRLF to LF; exact pinned hashes required before output",
+  "exporter": "scripts/build_ui_names.py"
+}

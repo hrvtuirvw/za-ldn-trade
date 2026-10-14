@@ -1,0 +1,1 @@
+obj-m := ldn_bss_seed.o
