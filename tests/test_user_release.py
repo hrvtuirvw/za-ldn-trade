@@ -198,7 +198,7 @@ def test_public_export_has_no_private_workspace_dependency(tmp_path,monkeypatch)
     assert receipt['copied_git_or_work'] is False
     assert (output/'.github/workflows/test.yml').is_file()
     assert not (output/'work').exists() and not (output/'.git').exists()
-    assert (output/'README.md').read_text().startswith('# za-ldn-trade')
+    assert (output/'README.md').read_text(encoding='utf-8').startswith('# za-ldn-trade')
     assert (output/'.gitignore').read_bytes()==(ROOT/'scripts/release.gitignore').read_bytes()
     with pytest.raises(FileExistsError):export(ROOT,output)
 
@@ -206,7 +206,7 @@ def test_public_export_has_no_private_workspace_dependency(tmp_path,monkeypatch)
 def test_public_path_scan_distinguishes_absolute_paths_from_comment_fragments(tmp_path,monkeypatch):
     monkeypatch.syspath_prepend(str(ROOT/'scripts'))
     import export_za_source as source_export
-    synthetic_root = Path('/' + 'app')
+    synthetic_root = Path('/' + 'app').absolute()
     monkeypatch.setattr(source_export,'public_payload',lambda _root:('0.6.0',{'source.py':b'# comm/scene/app unchanged\n'}))
     assert source_export.export(synthetic_root,tmp_path/'allowed')['files']==1
     private_example = f'open("{synthetic_root}/private/config")\n'.encode()

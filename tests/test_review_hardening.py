@@ -228,10 +228,8 @@ def test_trade_overwrite_checks_content_even_when_size_and_mtime_match(tmp_path)
 def desktop():
     tk = pytest.importorskip("tkinter")
     from tkinter import ttk, scrolledtext
-    try:
-        root = tk.Tk()
-    except tk.TclError as exc:
-        pytest.skip(f"mapped Tk display required: {exc}")
+    from test_gui import _create_tk_root
+    root = _create_tk_root(tk)
     messages = Mock()
     messages.askyesno.return_value = True
     app = gui._DesktopApp(

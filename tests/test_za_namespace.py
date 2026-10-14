@@ -15,6 +15,13 @@ from test_release_polish import gate, artifacts, wheel_files, zip_blob, sdist_bl
 
 @pytest.mark.parametrize('module', ldn.__all__)
 def test_shared_modules_are_owned_by_the_za_namespace(module):
+    # Ownership is inspectable without importing a Linux-only backend on a
+    # Windows GUI/relay installation. Its real Linux imports remain tested.
+    if module == 'ldn_single' and sys.platform != 'linux':
+        spec = importlib.util.find_spec('zasim.ldn.' + module)
+        assert spec is not None and spec.name == 'zasim.ldn.' + module
+        assert Path(spec.origin).parent == Path(ldn.__file__).parent
+        return
     item = importlib.import_module('zasim.ldn.' + module)
     assert Path(item.__file__).parent == Path(ldn.__file__).parent
     assert item.__name__ == 'zasim.ldn.' + module

@@ -25,7 +25,22 @@ def _create_tk_root(tkinter):
             return tkinter.Tk()
         except tkinter.TclError as exc:
             last_error = exc
+    if os.environ.get("ZA_REQUIRE_GUI_TESTS") == "1":
+        raise last_error
     pytest.skip(f"desktop display unavailable: {last_error}")
+
+
+def test_required_ci_display_cannot_silently_skip_after_startup_retries(monkeypatch):
+    class StartupError(Exception):
+        pass
+    calls = []
+    def missing():
+        calls.append(True)
+        raise StartupError('synthetic unavailable Tk')
+    monkeypatch.setenv('ZA_REQUIRE_GUI_TESTS', '1')
+    with pytest.raises(StartupError, match='synthetic unavailable Tk'):
+        _create_tk_root(SimpleNamespace(Tk=missing, TclError=StartupError))
+    assert len(calls) == (3 if os.name == 'nt' else 1)
 
 
 def test_gui_reports_missing_tk_without_affecting_other_modules(monkeypatch) -> None:

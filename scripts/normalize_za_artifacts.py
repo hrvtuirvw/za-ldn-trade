@@ -25,6 +25,14 @@ def safe_name(name):
         raise ValueError('unsafe archive member')
 
 
+def safe_zip_name(entry):
+    # ZipInfo retains the decoded on-wire name before truncating NUL or
+    # replacing host separators. Validate that value before any normalization.
+    safe_name(entry.orig_filename)
+    if entry.filename != entry.orig_filename:
+        raise ValueError('unsafe normalized ZIP member')
+
+
 def bounded_tar_data(data):
     """Cap the entire TAR stream, including PAX headers/padding, before parsing."""
     if len(data)>MAX_RELEASE_BYTES:raise ValueError('artifact exceeds size limit')
@@ -75,7 +83,7 @@ def normalize_wheel(data):
         if len({entry.filename for entry in entries})!=len(entries):raise ValueError('duplicate wheel member')
         if sum(entry.file_size for entry in entries)>MAX_RELEASE_BYTES:raise ValueError('wheel expansion exceeds size limit')
         for entry in entries:
-            safe_name(entry.filename)
+            safe_zip_name(entry)
             if entry.is_dir() or stat.S_IFMT(entry.external_attr>>16) not in (0,stat.S_IFREG):
                 raise ValueError('nonregular wheel member')
         with zipfile.ZipFile(buffer,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as target:

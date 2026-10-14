@@ -16,6 +16,8 @@ jobs:
         python: ['3.10', '3.12', '3.14']
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    env:
+      ZA_REQUIRE_GUI_TESTS: '1'
     defaults:
       run:
         shell: bash
@@ -24,6 +26,43 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - name: Size the disposable Windows test desktop
+        if: runner.os == 'Windows'
+        run: |
+          python - <<'PY'
+          import ctypes as c
+          from ctypes import wintypes as w
+          class Mode(c.Structure):
+              _fields_ = [
+                  ('device', c.c_wchar * 32), ('spec', w.WORD), ('driver', w.WORD),
+                  ('size', w.WORD), ('extra', w.WORD), ('fields', w.DWORD),
+                  ('x', c.c_int32), ('y', c.c_int32), ('orientation', w.DWORD), ('fixed', w.DWORD),
+                  ('color', w.WORD), ('duplex', w.WORD), ('y_resolution', w.WORD),
+                  ('tt_option', w.WORD), ('collate', w.WORD), ('form', c.c_wchar * 32),
+                  ('dpi', w.WORD), ('bits', w.DWORD), ('width', w.DWORD), ('height', w.DWORD),
+                  ('flags', w.DWORD), ('frequency', w.DWORD), ('icm_method', w.DWORD),
+                  ('icm_intent', w.DWORD), ('media', w.DWORD), ('dither', w.DWORD),
+                  ('reserved1', w.DWORD), ('reserved2', w.DWORD),
+                  ('panning_width', w.DWORD), ('panning_height', w.DWORD)]
+          assert c.sizeof(Mode) == 220
+          user = c.WinDLL('user32', use_last_error=True)
+          user.EnumDisplaySettingsW.argtypes = [w.LPCWSTR, w.DWORD, c.POINTER(Mode)]
+          user.EnumDisplaySettingsW.restype = w.BOOL
+          user.ChangeDisplaySettingsW.argtypes = [c.POINTER(Mode), w.DWORD]
+          user.ChangeDisplaySettingsW.restype = c.c_long
+          mode = Mode(); mode.size = c.sizeof(Mode)
+          assert user.EnumDisplaySettingsW(None, 0xffffffff, c.byref(mode))
+          print('original desktop:', mode.width, mode.height)
+          if mode.width < 1280 or mode.height < 1024:
+              mode.width, mode.height = 1280, 1024
+              mode.fields = 0x00080000 | 0x00100000
+              # Flags=0 is transient: do not write display settings to registry.
+              result = user.ChangeDisplaySettingsW(c.byref(mode), 0)
+              assert result == 0, ('test display resize failed', result)
+          actual = (user.GetSystemMetrics(0), user.GetSystemMetrics(1))
+          assert actual[0] >= 1280 and actual[1] >= 1024, actual
+          print('test desktop:', actual)
+          PY
       - name: Record native release-input metadata
         run: |
           python - <<'PY'

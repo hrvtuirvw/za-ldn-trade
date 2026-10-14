@@ -14,11 +14,15 @@ from zasim.gui import _DesktopApp
 def make_app(monkeypatch, scale=1.3333, language="ja", *, initial_task=0):
     tk = pytest.importorskip("tkinter")
     from tkinter import ttk, filedialog, scrolledtext
-    try:
-        root = tk.Tk()
-    except tk.TclError as exc:
-        pytest.skip(f"mapped Tk display required: {exc}")
+    from tkinter import font
+    from test_gui import _create_tk_root
+    root = _create_tk_root(tk)
     root.tk.call("tk", "scaling", scale)
+    # Declare the synthetic DPI fixture's point size explicitly. Windows'
+    # native default-font pixel metrics can survive changes to tk scaling;
+    # preserve the OS font families, but exercise the requested 10pt scaling.
+    for name in ("TkDefaultFont", "TkTextFont", "TkFixedFont"):
+        font.nametofont(name, root=root).configure(size=10)
     errors, infos, callbacks = [], [], []
     messages = SimpleNamespace(
         showerror=lambda *a, **kw: errors.append(a),

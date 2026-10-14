@@ -353,8 +353,13 @@ def test_app_variables_bind_to_its_root_not_an_unrelated_default_root(monkeypatc
         root, app, *_ = make_app(monkeypatch)
         assert root.tk is not other.tk
         assert app.backend_var._tk is root.tk
-        app.direct_radio.invoke(); settle(root)
-        assert app.backend_var.get() == 'direct'
+        # Windows deliberately disables Direct Linux. Exercise an enabled
+        # radio's real variable transition without enabling a forbidden mode.
+        direct_enabled = 'disabled' not in app.direct_radio.state()
+        app.backend_var.set('unselected')
+        (app.direct_radio if direct_enabled else app.relay_radio).invoke()
+        settle(root)
+        assert app.backend_var.get() == ('direct' if direct_enabled else 'relay')
         assert app.change_language('en')
         assert app.radio_var._tk is root.tk
         assert app.editor_notice_var._tk is root.tk

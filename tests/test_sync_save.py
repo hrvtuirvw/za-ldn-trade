@@ -37,9 +37,10 @@ def test_real_durability_callbacks_and_all_native_barriers(tmp_path):
     def prepare():calls.append('prepare');return staged.read_bytes()==payload
     def persist():
         calls.append('persist');os.replace(staged,saved)
-        fd=os.open(tmp_path,os.O_RDONLY|os.O_DIRECTORY)
-        try:os.fsync(fd)
-        finally:os.close(fd)
+        # Exercise the real platform adapter, not a POSIX-only test clone.
+        # File fsync above and every protocol barrier remain mandatory.
+        from zasim.file_save import _sync_output_directory
+        _sync_output_directory(tmp_path)
         return saved.read_bytes()==payload
     def commit():calls.append('commit');return saved.read_bytes()==payload
     def finish():calls.append('finish');return saved.read_bytes()==payload

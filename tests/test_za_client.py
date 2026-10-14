@@ -2162,12 +2162,29 @@ def test_each_durability_boundary_keeps_a_receipt_or_prevents_final_send(
     target = tmp_path / "sync-fault.epa9"
     received = _occupied_party(133).to_bytes(encrypted=True)
     real_fsync = za_client.os.fsync
+    real_directory_sync = za_client._sync_parent_directory
     syncs = []
-    def sync(fd):
-        syncs.append(fd)
+    injected = []
+    in_directory = False
+    def boundary(kind):
+        syncs.append(kind)
         if len(syncs) == fail_sync:
+            injected.append(kind)
             raise OSError("synthetic disk durability failure")
+    def sync(fd):
+        if not in_directory:
+            boundary('file')
         real_fsync(fd)
+    def sync_directory(path):
+        nonlocal in_directory
+        # Count the real adapter boundary, even where directory fsync is a
+        # documented no-op. Do not count its POSIX syscall a second time.
+        boundary('directory')
+        in_directory = True
+        try:
+            real_directory_sync(path)
+        finally:
+            in_directory = False
     def uncertain_send():
         raise RuntimeError("synthetic uncertain Final send")
     def stop():
@@ -2179,6 +2196,7 @@ def test_each_durability_boundary_keeps_a_receipt_or_prevents_final_send(
         send_callback=uncertain_send, stop_callback=stop,
     )
     monkeypatch.setattr(za_client.os, "fsync", sync)
+    monkeypatch.setattr(za_client, "_sync_parent_directory", sync_directory)
     if fail_sync <= 2:
         with pytest.raises((OSError, RuntimeError)):
             za_client.run_live_trade(_occupied_party(), output=target,
@@ -2196,3 +2214,13 @@ def test_each_durability_boundary_keeps_a_receipt_or_prevents_final_send(
         assert events == ["start", ("send", b"wire", "169.254.1.1"), "stop"]
         if fail_stop:
             assert "cleanup failed" in result.warning
+    assert len(syncs) >= fail_sync and len(injected) == 1
+
+
+@pytest.mark.parametrize('fail_sync', range(1, 7))
+def test_durability_faults_remain_reached_with_no_directory_syscall(monkeypatch, tmp_path, fail_sync):
+    # Windows has a no-op directory adapter, not the POSIX syscall sequence.
+    # Preserve the same logical pre/post-Final fault matrix without skips.
+    monkeypatch.setattr(za_client, '_sync_output_directory', lambda _path: None)
+    test_each_durability_boundary_keeps_a_receipt_or_prevents_final_send(
+        monkeypatch, tmp_path, fail_sync, False)

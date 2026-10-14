@@ -128,8 +128,31 @@ def test_sdist_gate_rejects_extra_missing_or_private_owner(extra, omit, owner):
 @pytest.mark.parametrize("name", ["../escape", "/absolute", "folder\\escape", "C:escape"])
 def test_zip_names_are_rejected_without_extraction(name):
     raw = io.BytesIO()
-    with zipfile.ZipFile(raw, "w") as z: z.writestr(name,b"synthetic")
+    info = zipfile.ZipInfo('placeholder')
+    # ZipInfo(name) normalizes backslashes on Windows before writing. Put the
+    # actual adversarial name on the wire, rather than testing a safe rewrite.
+    info.filename = info.orig_filename = name
+    with zipfile.ZipFile(raw, "w") as z: z.writestr(info,b"synthetic")
+    assert name.encode() in raw.getvalue()
     with pytest.raises(ValueError): gate.zip_files(raw.getvalue())
+
+
+@pytest.mark.parametrize('consumer', ['gate', 'normalize'])
+def test_zip_original_name_is_checked_before_windows_normalization(monkeypatch, consumer):
+    raw = io.BytesIO()
+    info = zipfile.ZipInfo('placeholder')
+    info.filename = info.orig_filename = 'folder\\escape'
+    with zipfile.ZipFile(raw, 'w') as archive:
+        archive.writestr(info, b'synthetic')
+    original = zipfile.ZipInfo
+    class WindowsInfo(original):
+        def __init__(self, filename='NoName', *args, **kwargs):
+            super().__init__(filename, *args, **kwargs)
+            self.filename = self.filename.replace('\\', '/')
+    monkeypatch.setattr(zipfile, 'ZipInfo', WindowsInfo)
+    operation = gate.zip_files if consumer == 'gate' else gate.normalize_wheel
+    with pytest.raises(ValueError, match='unsafe'):
+        operation(raw.getvalue())
 
 
 def test_zip_links_and_duplicates_are_rejected():

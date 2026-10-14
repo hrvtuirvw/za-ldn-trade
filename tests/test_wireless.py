@@ -348,6 +348,8 @@ def test_gui_readonly_report_mapped_scrollable_and_nonblocking(monkeypatch, tmp_
             root.update(); time.sleep(.01)
         settle(root)
         assert "synthetic driver detail" in app.environment_text.get("1.0", "end")
+        app.environment_text.yview_moveto(0)
+        settle(root)
         assert app.environment_text.yview()[1] < 1
         app.environment_text.yview_moveto(1)
         visible(app.environment_close_button, window)

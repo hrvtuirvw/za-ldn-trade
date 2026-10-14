@@ -259,7 +259,8 @@ def test_json_nesting_limit_is_quote_aware_and_independent_of_recursion_limit():
     validate_json_depth(json.dumps({"string": '[\\"' * 1000 + "}" * 1000}).encode())
 
 
-@pytest.mark.parametrize("raw", [b"\xff", b"not json", b"[1,2]", b"x" * 65537])
+@pytest.mark.parametrize("raw", [b"\xff", b"not json", b"[1,2]", b"x" * 65537],
+                         ids=["invalid-utf8", "invalid-json", "wrong-root", "oversized"])
 def test_bad_preferences_preserved_and_startup_falls_back(tmp_path, monkeypatch, raw):
     target = tmp_path / "preferences.json"; target.write_bytes(raw)
     monkeypatch.setattr(i18n, "preference_path", lambda: target)

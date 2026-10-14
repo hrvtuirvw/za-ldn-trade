@@ -21,7 +21,7 @@ import zipfile
 
 from build_za_release import (archive_bytes, no_links, public_payload, read_regular_file,
                              MAX_RELEASE_BYTES, MAX_RELEASE_MEMBERS)
-from normalize_za_artifacts import normalize_tar, normalize_wheel, safe_name, bounded_tar_data
+from normalize_za_artifacts import normalize_tar, normalize_wheel, safe_name, safe_zip_name, bounded_tar_data
 
 LIMIT = MAX_RELEASE_BYTES
 MAX_MEMBERS = MAX_RELEASE_MEMBERS
@@ -45,7 +45,7 @@ def zip_files(raw):
         require(sum(entry.file_size for entry in entries) <= LIMIT, "ZIP expansion exceeds limit")
         files = {}
         for entry in entries:
-            safe_name(entry.filename)
+            safe_zip_name(entry)
             require(entry.filename and not entry.is_dir(), "unexpected ZIP directory")
             kind = stat.S_IFMT(entry.external_attr >> 16)
             require(kind in (0, stat.S_IFREG), "nonregular ZIP member")

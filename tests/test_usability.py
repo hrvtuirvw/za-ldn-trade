@@ -83,11 +83,12 @@ def _assert_editor_cascade_is_displayed(root, app):
                 rect = wt.RECT()
                 assert user.GetMenuItemRect(None, handle, 3, ctypes.byref(rect))
                 assert rect.right > rect.left and rect.bottom > rect.top
-                point = wt.POINT((rect.left + rect.right) // 2, (rect.top + rect.bottom) // 2)
-                assert user.ScreenToClient(hwnd, ctypes.byref(point))
-                position = (point.x & 0xffff) | ((point.y & 0xffff) << 16)
-                for message, buttons in ((0x0200, 0), (0x0201, 1), (0x0202, 0)):
-                    assert user.PostMessageW(hwnd, message, buttons, position)
+                # TrackPopupMenu uses the real cursor position for mouse
+                # messages, not merely their lParam. Keyboard navigation is
+                # scoped to this popup and does not move a global cursor.
+                for key in (0x24, 0x28, 0x28, 0x28, 0x27):  # Home, Down x3, Right
+                    assert user.PostMessageW(hwnd, 0x0100, key, 1)
+                    assert user.PostMessageW(hwnd, 0x0101, key, 0xc0000001)
                 pending.append(root.after(50, inspect_popup))
                 return
             if any(handle == expected[0] for _hwnd, handle in windows):
@@ -105,6 +106,8 @@ def _assert_editor_cascade_is_displayed(root, app):
     pending.append(root.after(20, inspect_popup))
     pending.append(root.after(3000, lambda: finish(AssertionError("native cascade was not displayed"))))
     try:
+        root.lift()
+        root.focus_force()
         app.editor_file_menu.post(root.winfo_rootx() + 12, root.winfo_rooty() + 80)
     finally:
         for job in pending:
@@ -112,7 +115,7 @@ def _assert_editor_cascade_is_displayed(root, app):
         user.EndMenu()
     if failures:
         raise failures[0]
-    assert observed == [True]
+    assert observed == [True], {'parent_observed': expected[0] is not None}
 
 
 def document(app):
