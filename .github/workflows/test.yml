@@ -15,6 +15,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         python: ['3.10', '3.12', '3.14']
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     defaults:
       run:
         shell: bash
@@ -66,12 +67,12 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           cd "$RUNNER_TEMP/za-public"
-          xvfb-run -a python -m pytest -q -rs -W error::ResourceWarning
+          xvfb-run -a python -m pytest -vv -rs --durations=10 -o faulthandler_timeout=60 -o faulthandler_exit_on_timeout=true -W error::ResourceWarning -W error::pytest.PytestUnraisableExceptionWarning
       - name: Windows product tests
         if: runner.os == 'Windows'
         run: |
           cd "$RUNNER_TEMP/za-public"
-          python -m pytest -q -rs -W error::ResourceWarning
+          python -m pytest -vv -rs --durations=10 -o faulthandler_timeout=60 -o faulthandler_exit_on_timeout=true -W error::ResourceWarning -W error::pytest.PytestUnraisableExceptionWarning
       - name: Build and verify finalized artifacts
         run: |
           cd "$RUNNER_TEMP/za-public"

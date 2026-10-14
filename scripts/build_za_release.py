@@ -25,6 +25,7 @@ FILES = tuple(sorted(
     [f"{package.replace('.', '/')}/{name}.py" for package, names in MODULES.items() for name in names]
     + [f"tests/{name}.py" for name in PUBLIC_TESTS]
     + ["tests/lab_user_data.py", "tests/test_cleanup_contracts.py",
+       "tests/conftest.py", "tests/test_tk_fixture_lifetime.py",
        "tests/test_distribution_cleanup.py", "tests/test_origin_cleanup.py", "tests/test_usability.py", "scripts/za_build.py",
        "tests/test_runtime_polish.py", "tests/test_handshake_wire_equivalence.py",
        "tests/handshake_wire_reference.json", "tests/test_polish_safety.py",
