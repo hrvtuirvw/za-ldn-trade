@@ -27,13 +27,20 @@ jobs:
       - name: Record native release-input metadata
         run: |
           python - <<'PY'
-          import json, os, platform, sys
+          import hashlib, json, os, platform, subprocess, sys
           from pathlib import Path
           fields = ('st_dev', 'st_ino', 'st_size', 'st_mtime_ns', 'st_ctime_ns',
                     'st_mode', 'st_birthtime_ns', 'st_file_attributes', 'st_reparse_tag')
           print(sys.version, platform.platform())
+          print('checkout autocrlf:', subprocess.run(
+              ['git', 'config', '--get', 'core.autocrlf'], capture_output=True,
+              text=True).stdout.strip() or 'unset')
+          data = Path('zasim/data/ui_names.json').read_bytes()
+          provenance = json.loads(Path('zasim/data/ui_names_provenance.json').read_text(encoding='utf-8'))
+          assert hashlib.sha256(data).hexdigest() == provenance['data_sha256'], 'checkout changed catalog bytes'
           if os.name == 'nt':
               import ctypes
+              print('desktop pixels:', ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1))
               filesystem = ctypes.create_unicode_buffer(256)
               if not ctypes.windll.kernel32.GetVolumeInformationW(
                   str(Path.cwd().anchor), None, 0, None, None, None, filesystem, len(filesystem)):
@@ -67,12 +74,12 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           cd "$RUNNER_TEMP/za-public"
-          xvfb-run -a python -m pytest -vv -rs --durations=10 -o faulthandler_timeout=60 -o faulthandler_exit_on_timeout=true -W error::ResourceWarning -W error::pytest.PytestUnraisableExceptionWarning
+          xvfb-run -a python -m pytest -v --tb=short -rs --durations=10 -o faulthandler_timeout=60 -o faulthandler_exit_on_timeout=true -W error::ResourceWarning -W error::pytest.PytestUnraisableExceptionWarning
       - name: Windows product tests
         if: runner.os == 'Windows'
         run: |
           cd "$RUNNER_TEMP/za-public"
-          python -m pytest -vv -rs --durations=10 -o faulthandler_timeout=60 -o faulthandler_exit_on_timeout=true -W error::ResourceWarning -W error::pytest.PytestUnraisableExceptionWarning
+          python -m pytest -v --tb=short -rs --durations=10 -o faulthandler_timeout=60 -o faulthandler_exit_on_timeout=true -W error::ResourceWarning -W error::pytest.PytestUnraisableExceptionWarning
       - name: Build and verify finalized artifacts
         run: |
           cd "$RUNNER_TEMP/za-public"

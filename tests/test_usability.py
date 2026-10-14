@@ -10,6 +10,111 @@ from zasim.pa9_editor import PA9EditorDocument
 from zasim import ui_catalog, i18n
 
 
+def _assert_editor_cascade_is_displayed(root, app):
+    if root.tk.call("tk", "windowingsystem") != "win32":
+        app.editor_file_menu.post(root.winfo_rootx() + 12, root.winfo_rooty() + 80)
+        root.update_idletasks()
+        app.editor_file_menu.tk.call(str(app.editor_file_menu), "postcascade", 3)
+        root.update_idletasks()
+        assert app.editor_menu.winfo_ismapped()
+        app.editor_file_menu.unpost()
+        app.editor_menu.unpost()
+        return
+
+    # Windows Menu.post enters TrackPopupMenu's native modal loop, and native
+    # menus do not map Tk windows. Observe/operate only this thread's actual
+    # popup HWNDs from queued owner-thread callbacks; never send global input.
+    import ctypes
+    from ctypes import wintypes as wt
+    user = ctypes.WinDLL("user32", use_last_error=True)
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    callback_type = ctypes.WINFUNCTYPE(wt.BOOL, wt.HWND, wt.LPARAM)
+    signatures = {
+        "EnumThreadWindows": ([wt.DWORD, callback_type, wt.LPARAM], wt.BOOL),
+        "IsWindowVisible": ([wt.HWND], wt.BOOL),
+        "GetClassNameW": ([wt.HWND, wt.LPWSTR, ctypes.c_int], ctypes.c_int),
+        "SendMessageW": ([wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM], ctypes.c_void_p),
+        "GetSubMenu": ([ctypes.c_void_p, ctypes.c_int], ctypes.c_void_p),
+        "GetMenuItemCount": ([ctypes.c_void_p], ctypes.c_int),
+        "GetMenuItemRect": ([wt.HWND, ctypes.c_void_p, wt.UINT, ctypes.POINTER(wt.RECT)], wt.BOOL),
+        "ScreenToClient": ([wt.HWND, ctypes.POINTER(wt.POINT)], wt.BOOL),
+        "PostMessageW": ([wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM], wt.BOOL),
+        "EndMenu": ([], wt.BOOL),
+    }
+    for name, (arguments, result) in signatures.items():
+        getattr(user, name).argtypes = arguments
+        getattr(user, name).restype = result
+    kernel.GetCurrentThreadId.restype = wt.DWORD
+    owner = kernel.GetCurrentThreadId()
+    pending, failures, observed = [], [], []
+    expected = [None]
+
+    def popup_windows():
+        windows = []
+        @callback_type
+        def visit(hwnd, _data):
+            name = ctypes.create_unicode_buffer(64)
+            user.GetClassNameW(hwnd, name, len(name))
+            if name.value == "#32768" and user.IsWindowVisible(hwnd):
+                handle = user.SendMessageW(hwnd, 0x01E1, 0, 0)  # MN_GETHMENU
+                if handle:
+                    windows.append((hwnd, handle))
+            return True
+        assert user.EnumThreadWindows(owner, visit, 0)
+        return windows
+
+    def finish(error=None):
+        if error is not None:
+            failures.append(error)
+        user.EndMenu()  # ends only the calling GUI thread's active menu
+
+    def inspect_popup():
+        try:
+            windows = popup_windows()
+            if expected[0] is None:
+                parents = [(hwnd, handle) for hwnd, handle in windows
+                           if user.GetSubMenu(handle, 3)]
+                if not parents:
+                    pending.append(root.after(20, inspect_popup))
+                    return
+                assert len(parents) == 1
+                hwnd, handle = parents[0]
+                expected[0] = user.GetSubMenu(handle, 3)
+                rect = wt.RECT()
+                assert user.GetMenuItemRect(None, handle, 3, ctypes.byref(rect))
+                assert rect.right > rect.left and rect.bottom > rect.top
+                point = wt.POINT((rect.left + rect.right) // 2, (rect.top + rect.bottom) // 2)
+                assert user.ScreenToClient(hwnd, ctypes.byref(point))
+                position = (point.x & 0xffff) | ((point.y & 0xffff) << 16)
+                for message, buttons in ((0x0200, 0), (0x0201, 1), (0x0202, 0)):
+                    assert user.PostMessageW(hwnd, message, buttons, position)
+                pending.append(root.after(50, inspect_popup))
+                return
+            if any(handle == expected[0] for _hwnd, handle in windows):
+                assert user.GetMenuItemCount(expected[0]) == app.editor_menu.index("end") + 1
+                rect = wt.RECT()
+                assert user.GetMenuItemRect(None, expected[0], 0, ctypes.byref(rect))
+                assert rect.right > rect.left and rect.bottom > rect.top
+                observed.append(True)
+                finish()
+            else:
+                pending.append(root.after(20, inspect_popup))
+        except BaseException as exc:
+            finish(exc)
+
+    pending.append(root.after(20, inspect_popup))
+    pending.append(root.after(3000, lambda: finish(AssertionError("native cascade was not displayed"))))
+    try:
+        app.editor_file_menu.post(root.winfo_rootx() + 12, root.winfo_rooty() + 80)
+    finally:
+        for job in pending:
+            root.after_cancel(job)
+        user.EndMenu()
+    if failures:
+        raise failures[0]
+    assert observed == [True]
+
+
 def document(app):
     app.editor_document = PA9EditorDocument.create(
         CreateRequest(152, "Test", 1, 2, language=2, seed=7)
@@ -561,13 +666,7 @@ def test_editor_has_one_viewport_and_persistent_document_navigation(
                 app.editor_page_combo.event_generate("<<ComboboxSelected>>")
                 settle(root)
                 assert app.editor_notebook.index(app.editor_notebook.select()) == index
-            app.editor_file_menu.post(root.winfo_rootx() + 12, root.winfo_rooty() + 80)
-            root.update_idletasks()
-            app.editor_file_menu.tk.call(str(app.editor_file_menu), "postcascade", 3)
-            root.update_idletasks()
-            assert app.editor_menu.winfo_ismapped()
-            app.editor_file_menu.unpost()
-            app.editor_menu.unpost()
+            _assert_editor_cascade_is_displayed(root, app)
         else:
             for w in (
                 app.editor_new_button,

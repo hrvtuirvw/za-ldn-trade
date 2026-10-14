@@ -44,7 +44,7 @@ FILES = tuple(sorted(
        "zasim/data/ui_names.json", "zasim/data/ui_names_provenance.json", "scripts/build_ui_names.py",
        "scripts/pa9_reference/Program.cs", "scripts/pa9_reference/pa9_reference.csproj",
        "docs/images/editor-en.png", "docs/images/editor-ja.png", "README_JA.md", "docs/USER_GUIDE_EN.md", "docs/WIRELESS_COMPATIBILITY_EN.md", "docs/PA9_CREATION_EN.md", "docs/LOCALIZATION.md",
-       ".editorconfig", ".github/ISSUE_TEMPLATE/bug_report.yml", ".github/ISSUE_TEMPLATE/feature_request.yml", ".github/ISSUE_TEMPLATE/config.yml", ".github/PULL_REQUEST_TEMPLATE.md",
+       ".editorconfig", ".gitattributes", ".github/ISSUE_TEMPLATE/bug_report.yml", ".github/ISSUE_TEMPLATE/feature_request.yml", ".github/ISSUE_TEMPLATE/config.yml", ".github/PULL_REQUEST_TEMPLATE.md",
        "docs/PA9_CREATION.md", "docs/WIRELESS_COMPATIBILITY.md", "README.md", "README_ZA.md", "requirements.txt", "requirements-za.txt",
        "pyproject.toml", "zatrade.py", "zatrade_gui.py", "Start-za-ldn-trade.cmd",
        "scripts/setup_za.sh", "scripts/start_za_gui.sh", "scripts/start_za_gui.ps1",

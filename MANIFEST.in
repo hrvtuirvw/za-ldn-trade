@@ -1,6 +1,6 @@
 include LICENSE THIRD_PARTY_NOTICES.md README.md README_JA.md README_ZA.md RELEASE_NOTES.md CHANGELOG.md CONTRIBUTING.md SECURITY.md
 include requirements.txt requirements-za.txt pytest.ini Start-za-ldn-trade.cmd
-include pyproject.toml MANIFEST.in .editorconfig
+include pyproject.toml MANIFEST.in .editorconfig .gitattributes
 graft licenses
 graft zasim
 exclude zasim/rejection_probe.py

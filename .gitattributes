@@ -1,0 +1,3 @@
+# Public resource checksums and release manifests describe exact Git bytes.
+# Do not let Windows checkout silently rewrite JSON or other reviewed inputs.
+* -text

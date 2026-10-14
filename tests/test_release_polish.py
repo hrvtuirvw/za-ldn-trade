@@ -337,3 +337,14 @@ def test_documented_offline_cli_examples_execute_in_order(name, tmp_path):
             # The public PA9 reader handles encrypted/decrypted output alike.
             mon = PA9(output.read_bytes())
             assert mon.size == 344 and mon.checksum_valid
+
+
+def test_release_checkout_preserves_hash_checked_resource_bytes():
+    attributes = (ROOT / '.gitattributes').read_text(encoding='utf-8')
+    assert '* -text' in [line.strip() for line in attributes.splitlines()]
+    assert '.gitattributes' in (ROOT / 'MANIFEST.in').read_text(encoding='utf-8').split()
+    from zasim import ui_catalog
+    raw = (ROOT / 'zasim/data/ui_names.json').read_bytes()
+    provenance = json.loads((ROOT / 'zasim/data/ui_names_provenance.json').read_text(encoding='utf-8'))
+    assert hashlib.sha256(raw).hexdigest() == provenance['data_sha256']
+    assert ui_catalog._names()['schema'] == 1
