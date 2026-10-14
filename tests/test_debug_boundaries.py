@@ -392,7 +392,10 @@ def test_batched_log_widget_errors_keep_terminal_retry_single_ack(desktop, tmp_p
     for _ in range(150):
         app.controller._log(app.active_job_id, "synthetic log")
     fault = Mock(side_effect=RuntimeError("synthetic widget failure"))
-    monkeypatch.setattr(app.log_text, failure_boundary, fault)
+    # Preserve the old "see" scenario id while injecting at the actual
+    # replacement scrolling primitive, not at an unused former helper.
+    method = "yview_moveto" if failure_boundary == "see" else failure_boundary
+    monkeypatch.setattr(app.log_text, method, fault)
     messages.showwarning.side_effect = [RuntimeError("synthetic dialog failure")] * 5 + [None]
     ack = Mock(wraps=app.controller.acknowledge)
     monkeypatch.setattr(app.controller, "acknowledge", ack)
@@ -530,3 +533,31 @@ def test_new_dialog_trace_disposal_preserves_foreign_trace_and_other_interpreter
                 raise
         foreign.after_cancel(timer)
         foreign.destroy()
+
+
+@pytest.mark.parametrize("initially_visible", [False, True])
+def test_log_tail_scroll_avoids_index_layout_and_still_reveals_last_line(
+    desktop, monkeypatch, initially_visible
+):
+    app, root, _messages = desktop
+    if initially_visible:
+        app.notebook.select(4)
+        root.update()
+    assert bool(app.log_text.winfo_viewable()) is initially_visible
+    forbidden = Mock(side_effect=AssertionError("do not resolve wrapped end index"))
+    scroll = Mock(wraps=app.log_text.yview_moveto)
+    monkeypatch.setattr(app.log_text, "see", forbidden)
+    monkeypatch.setattr(app.log_text, "yview_moveto", scroll)
+    lines = [f"line-{i}: " + "x" * 100 + "\n" for i in range(150)]
+    app._append_log_lines(lines)
+    assert app.log_text.get("1.0", "end-1c") == "".join(lines)
+    assert app._log_lines == len(lines) and app.log_text.cget("state") == "disabled"
+    assert not forbidden.called
+    scroll.assert_called_once_with(1.0)
+    app.notebook.select(4)
+    root.update()
+    # Still follow later output after the formerly hidden page is shown.
+    app._append_log_lines(["LAST-LINE\n"])
+    root.update()
+    assert app.log_text.yview()[1] == 1.0
+    assert app.log_text.dlineinfo("end-2c") is not None

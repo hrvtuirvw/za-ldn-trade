@@ -2538,7 +2538,10 @@ class _DesktopApp:
                 remove = self._log_lines - self.MAX_LOG_LINES
                 self.log_text.delete("1.0", f"{remove + 1}.0")
                 self._log_lines = self.MAX_LOG_LINES
-            self.log_text.see("end")
+            # Text.see resolves a display-line index. On Windows it can spend
+            # minutes laying out long wrapped lines in an unmapped, 1px page.
+            # Fractional scrolling keeps tail-following without that lookup.
+            self.log_text.yview_moveto(1.0)
         finally:
             self.log_text.configure(state="disabled")
 
